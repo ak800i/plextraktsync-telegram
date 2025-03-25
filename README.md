@@ -2,24 +2,28 @@
 
 A Docker wrapper for [PlexTraktSync](https://github.com/Taxel/PlexTraktSync) that monitors synchronization processes and sends Telegram notifications when errors occur.
 
-![Telegram Notification Example](https://i.imgur.com/example.png) *(example screenshot placeholder)*
+![Telegram Notification Example](https://i.imgur.com/example.png) *(Example notification screenshot placeholder)*
 
 ## Features
 
-- Real-time monitoring of PlexTraktSync output
-- Instant Telegram notifications for errors and warnings
-- Preserves original PlexTraktSync output with script messages clearly marked
-- Easy Docker deployment
+- 📡 **Real-time monitoring** of PlexTraktSync logs  
+- 🔔 **Instant Telegram notifications** for errors and warnings  
+- 📝 **Preserves original logs** while marking script-generated messages  
+- 🐳 **Easy deployment** with Docker  
 
 ## Prerequisites
 
-- Docker installed
-- Telegram bot token and chat ID
-- Existing PlexTraktSync configuration
+Before running this tool, ensure you have the following:
+
+- [Docker](https://docs.docker.com/get-docker/) installed  
+- A [Telegram bot](https://core.telegram.org/bots#3-how-do-i-create-a-bot) with a bot token  
+- Your **Telegram chat ID** (find it via `@userinfobot`)  
+- A working **PlexTraktSync configuration**  
 
 ## Quick Start
 
-## docker-compose.yml
+### 1️⃣ Create a `docker-compose.yml` file
+
 ```yaml
 version: '3'
 services:
@@ -41,7 +45,10 @@ services:
     network_mode: synobridge
 ```
 
-## custom_plextraktsync.sh
+> ⚠ **Replace** `/path/to/your/config` and `/path/to/your/scripts` with actual paths on your system.
+
+### 2️⃣ Create the monitoring script `custom_plextraktsync.sh`
+
 ```bash
 #!/bin/sh
 
@@ -76,7 +83,7 @@ $error_msg
 if [ "$1" = "watch" ]; then
     log_script "Starting PlexTraktSync in watch mode..."
     
-    # Modified output handling without TTY
+    # Monitor PlexTraktSync logs and send alerts on errors
     plextraktsync "$@" 2>&1 | while IFS= read -r line; do
         # Preserve original output
         echo "$line"
@@ -97,8 +104,22 @@ else
 fi
 ```
 
-You also need to run:
+### 3️⃣ Set the script permissions
+
+Before running the container, grant execution permissions to the script:
+
 ```bash
 chmod +x /path/to/your/scripts/custom_plextraktsync.sh
+```
+
+### 4️⃣ Install required dependencies inside the container
+
+After starting the container, run:
+
+```bash
 docker exec plextraktsync-watch-telegram apk add coreutils curl
 ```
+
+---
+
+**Now your PlexTraktSync setup is protected with real-time Telegram notifications!**
