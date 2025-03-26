@@ -40,8 +40,7 @@ services:
       - TZ=Your/Timezone
       - TELEGRAM_BOT_TOKEN=your_telegram_bot_token
       - TELEGRAM_CHAT_ID=your_telegram_chat_id
-    entrypoint: ["sh", "/app/scripts/custom_plextraktsync.sh"]
-    command: watch
+    entrypoint: ["sh", "-c", "apk add --no-cache curl && chmod +x /app/scripts/custom_plextraktsync.sh && exec /app/scripts/custom_plextraktsync.sh watch"]
     network_mode: synobridge
 ```
 
@@ -52,9 +51,24 @@ services:
 ```bash
 #!/bin/sh
 
+# Check dependencies
+check_dependencies() {
+    command -v curl >/dev/null 2>&1 || {
+        echo "Error: curl is required but not installed." >&2
+        exit 1
+    }
+    command -v grep >/dev/null 2>&1 || {
+        echo "Error: grep is required but not installed." >&2
+        exit 1
+    }
+    
+    echo "All dependencies are installed."  # Outputs to stdout (normal output)
+}
+
 # Function to send Telegram notification
 send_telegram() {
     message="$1"
+    echo "[DEBUG] Sending Telegram: $message" >&2
     curl -s -X POST \
         "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
         -d "chat_id=${TELEGRAM_CHAT_ID}" \
@@ -70,8 +84,8 @@ log_script() {
 # Enhanced error logging
 log_error() {
     error_msg="$1"
-    log_script "🚨 ERROR: $error_msg"
-    send_telegram "🚨 *PlexTraktSync Error* 🚨
+    log_script " ERROR: $error_msg"
+    send_telegram " *PlexTraktSync Error* 
 
 Error detected:
 \`\`\`
@@ -80,10 +94,12 @@ $error_msg
 }
 
 # Main execution
+check_dependencies
+
 if [ "$1" = "watch" ]; then
     log_script "Starting PlexTraktSync in watch mode..."
     
-    # Monitor PlexTraktSync logs and send alerts on errors
+    # Modified output handling without TTY
     plextraktsync "$@" 2>&1 | while IFS= read -r line; do
         # Preserve original output
         echo "$line"
@@ -110,14 +126,6 @@ Before running the container, grant execution permissions to the script:
 
 ```bash
 chmod +x /path/to/your/scripts/custom_plextraktsync.sh
-```
-
-### 4️⃣ Install required dependencies inside the container
-
-After starting the container, run:
-
-```bash
-docker exec plextraktsync-watch-telegram apk add coreutils curl
 ```
 
 ---
